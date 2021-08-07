@@ -20,18 +20,20 @@ module.exports = async (
 			});
 
 			message.channel
-				.send(
-					create_rich_embed(
-						'Ranking System',
-						null,
-						'#FF4500',
-						ranks_msg,
-						null,
-						null,
-						true,
-						null,
-						null
-					)
+				.send({
+					embeds: [
+						create_rich_embed(
+							'Ranking System',
+							null,
+							'#FF4500',
+							ranks_msg,
+							null,
+							null,
+							true,
+							null,
+							null
+						)]
+				}
 				)
 				.catch(e => {
 					return resolve({

@@ -100,19 +100,21 @@ module.exports = async (
 				});
 
 				message.channel
-					.send(
-						create_rich_embed(
-							// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-							`News ${args[0]} | ${moment(json.last_updated).format('DD/MM/YY hh:mm')}`,
-							'powered by NYTimes',
-							'#000000',
-							top_news,
-							null,
-							null,
-							true,
-							null,
-							null
-						)
+					.send({
+						embeds: [
+							create_rich_embed(
+								// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+								`News ${args[0]} | ${moment(json.last_updated).format('DD/MM/YY hh:mm')}`,
+								'powered by NYTimes',
+								'#000000',
+								top_news,
+								null,
+								null,
+								true,
+								null,
+								null
+							)]
+					}
 					)
 					.catch(e => {
 						return resolve({

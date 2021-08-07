@@ -27,23 +27,25 @@ module.exports = async (
 				const roll_msg = `${message.member?.displayName} rolled ${roll.result}${show}`;
 
 				message.channel
-					.send(
-						create_rich_embed(
-							null,
-							null,
-							'#FF0000',
-							null,
-							null,
-							null,
-							false,
-							null,
-							null,
-							undefined,
-							{
-								name: max_string(roll_msg, 256),
-								icon: 'https://raw.githubusercontent.com/keybraker/Portal/master/src/assets/img/dice.gif'
-							}
-						)
+					.send({
+						embeds: [
+							create_rich_embed(
+								null,
+								null,
+								'#FF0000',
+								null,
+								null,
+								null,
+								false,
+								null,
+								null,
+								undefined,
+								{
+									name: max_string(roll_msg, 256),
+									icon: 'https://raw.githubusercontent.com/keybraker/Portal/master/src/assets/img/dice.gif'
+								}
+							)]
+					}
 					)
 					.catch(e => {
 						return resolve({

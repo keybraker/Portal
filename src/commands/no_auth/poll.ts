@@ -25,7 +25,7 @@ function create_role_message(
 		);
 
 		channel
-			.send(role_message_emb)
+			.send({ embeds: [role_message_emb] })
 			.then(sent_message => {
 				sent_message
 					.react('🏁')

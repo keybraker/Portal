@@ -39,61 +39,65 @@ module.exports = async (
 			}
 		}
 
-		message.channel.send(
-			create_rich_embed(
-				'executing: ' + args.join(' '),
-				args.join(' '),
-				'#00ffb3',
-				null,
-				null,
-				null,
-				false,
-				null,
-				null,
-				undefined,
-				undefined
-			)
+		message.channel.send({
+			embeds: [
+				create_rich_embed(
+					'executing: ' + args.join(' '),
+					args.join(' '),
+					'#00ffb3',
+					null,
+					null,
+					null,
+					false,
+					null,
+					null,
+					undefined,
+					undefined
+				)]
+		}
 		)
 			.then(sent_message => {
 				if (message.guild) {
 					sent_message
-						.edit(
-							create_rich_embed(
-								'Text Interpreter',
-								null,
-								'#00ffb3',
-								<Field[]>[{
-									emote: 'input',
-									role: max_string(
-										`\`\`\`\n${args.join(' ')}\n\`\`\``,
-										256
-									),
-									inline: false
-								},
-								{
-									emote: 'output',
-									role: max_string(
-										`\`\`\`\n${regex_interpreter(
-											args.join(' '),
-											current_voice_channel,
-											voice_object,
-											guild_object.portal_list,
-											guild_object,
-											message.guild,
-											message.author.id
-										)}\n\`\`\``,
-										256
-									),
-									inline: false
-								}],
-								null,
-								null,
-								false,
-								null,
-								null,
-								undefined,
-								undefined
-							)
+						.edit({
+							embeds: [
+								create_rich_embed(
+									'Text Interpreter',
+									null,
+									'#00ffb3',
+									<Field[]>[{
+										emote: 'input',
+										role: max_string(
+											`\`\`\`\n${args.join(' ')}\n\`\`\``,
+											256
+										),
+										inline: false
+									},
+									{
+										emote: 'output',
+										role: max_string(
+											`\`\`\`\n${regex_interpreter(
+												args.join(' '),
+												current_voice_channel,
+												voice_object,
+												guild_object.portal_list,
+												guild_object,
+												message.guild,
+												message.author.id
+											)}\n\`\`\``,
+											256
+										),
+										inline: false
+									}],
+									null,
+									null,
+									false,
+									null,
+									null,
+									undefined,
+									undefined
+								)]
+						}
 						)
 						.catch(e => {
 							return resolve({

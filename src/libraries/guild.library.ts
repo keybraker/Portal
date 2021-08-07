@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
-	CategoryChannel, Collection, CollectorFilter, Guild, GuildCreateChannelOptions,
+	CategoryChannel, Collection, CollectorFilter, Guild, GuildChannelCreateOptions,
 	GuildMember, Message, MessageCollector, OverwriteResolvable, Role, TextChannel, VoiceChannel, VoiceState
 } from "discord.js";
 import moment from "moment";
@@ -41,7 +41,7 @@ function inline_operator(
 
 export function get_options(
 	guild: Guild, topic: string, can_write: boolean
-): GuildCreateChannelOptions {
+): GuildChannelCreateOptions {
 	if (can_write) {
 		return {
 			topic: `by Portal, ${topic}`,
@@ -102,7 +102,7 @@ export function get_role(guild: Guild | null, role_name_or_name: string): Role |
 //
 
 export async function create_channel(
-	guild: Guild, channel_name: string, channel_options: GuildCreateChannelOptions,
+	guild: Guild, channel_name: string, channel_options: GuildChannelCreateOptions,
 	channel_category: string | CategoryChannel | null
 ): Promise<string> {
 	return new Promise((resolve, reject) => {
@@ -145,7 +145,7 @@ export function create_voice_channel(
 ): Promise<string> {
 	return new Promise((resolve, reject) => {
 		if (state && state.channel) {
-			let voice_options: GuildCreateChannelOptions;
+			let voice_options: GuildChannelCreateOptions;
 
 			if (portal_object.allowed_roles) {
 				const permission_overwrites = portal_object.allowed_roles
@@ -169,7 +169,7 @@ export function create_voice_channel(
 				}
 
 				voice_options = {
-					type: 'voice',
+					type: 2,
 					bitrate: 96000,
 					userLimit: portal_object.user_limit_portal,
 					parent: state.channel.parent
@@ -179,7 +179,7 @@ export function create_voice_channel(
 				};
 			} else {
 				voice_options = {
-					type: 'voice',
+					type: 2,
 					bitrate: 96000,
 					userLimit: portal_object.user_limit_portal,
 					parent: state.channel.parent
@@ -350,8 +350,8 @@ export async function create_focus_channel(
 
 		const oldChannel: VoiceChannel | null = member.voice.channel;
 
-		const voice_options: GuildCreateChannelOptions = {
-			type: 'voice',
+		const voice_options: GuildChannelCreateOptions = {
+			type: 2,
 			bitrate: 96000,
 			userLimit: 2
 		};

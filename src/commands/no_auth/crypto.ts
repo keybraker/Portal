@@ -57,25 +57,26 @@ module.exports = async (
 				}
 
 				message.channel
-					.send(
-						create_rich_embed(
-							null,
-							null,
-							'#FFE600',
-							null,
-							null,
-							null,
-							false,
-							null,
-							null,
-							undefined,
-							{
-								// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-								name: `${voca.titleCase(crypto_name)} to ${voca.titleCase(currnc_name)} price is ${json[crypto_name][currnc_name]}`,
-								icon: 'https://raw.githubusercontent.com/keybraker/Portal/master/src/assets/img/coin.gif'
-							}
-						)
-					)
+					.send({
+						embeds: [
+							create_rich_embed(
+								null,
+								null,
+								'#FFE600',
+								null,
+								null,
+								null,
+								false,
+								null,
+								null,
+								undefined,
+								{
+									// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+									name: `${voca.titleCase(crypto_name)} to ${voca.titleCase(currnc_name)} price is ${json[crypto_name][currnc_name]}`,
+									icon: 'https://raw.githubusercontent.com/keybraker/Portal/master/src/assets/img/coin.gif'
+								}
+							)]
+					})
 					.then(() => {
 						return resolve({
 							result: true,

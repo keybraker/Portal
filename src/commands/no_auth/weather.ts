@@ -61,57 +61,59 @@ module.exports = async (
 
 				if (json.cod === 200) {
 					message.channel
-						.send(
-							create_rich_embed(
-								`${json.name}, ${json.sys.country} at ${moment().format('DD/MM/YY')}`,
-								'powered by OpenWeatherMap',
-								'#BFEFFF',
-								[
-									{
-										emote: 'Temperature',
-										role: `${kelvin_to_celsius(json.main.temp)}°C / ${kelvin_to_fahrenheit(json.main.temp)}°F`,
-										inline: true
-									},
-									{
-										emote: 'Feels like',
-										role: `${kelvin_to_celsius(json.main.feels_like)}°C / ${kelvin_to_fahrenheit(json.main.feels_like)}°F`,
-										inline: true
-									},
-									{
-										emote: null,
-										role: null,
-										inline: false
-									},
-									{
-										emote: 'Humidity',
-										role: `${json.main.humidity}`,
-										inline: true
-									},
-									{
-										emote: 'Wind Speed',
-										role: `${ms_to_ks(json.wind.speed)}kmh / ${ms_to_mlh(json.wind.speed)}mlh`,
-										inline: true
-									},
-									{
-										emote: 'Cloudiness',
-										role: `${json.clouds.all}%`,
-										inline: true
-									},
-									{
-										emote: 'Condition',
-										// eslint-disable-next-line @typescript-eslint/no-unsafe-call
-										role: `${json.weather.map((w: any) => {
-											return `${w.main} (${w.description})`;
-										}).join(', ')}`,
-										inline: false
-									}
-								],
-								`http://openweathermap.org/img/wn/${json.weather[0].icon}@2x.png`,
-								null,
-								true,
-								null,
-								null
-							)
+						.send({
+							embeds: [
+								create_rich_embed(
+									`${json.name}, ${json.sys.country} at ${moment().format('DD/MM/YY')}`,
+									'powered by OpenWeatherMap',
+									'#BFEFFF',
+									[
+										{
+											emote: 'Temperature',
+											role: `${kelvin_to_celsius(json.main.temp)}°C / ${kelvin_to_fahrenheit(json.main.temp)}°F`,
+											inline: true
+										},
+										{
+											emote: 'Feels like',
+											role: `${kelvin_to_celsius(json.main.feels_like)}°C / ${kelvin_to_fahrenheit(json.main.feels_like)}°F`,
+											inline: true
+										},
+										{
+											emote: null,
+											role: null,
+											inline: false
+										},
+										{
+											emote: 'Humidity',
+											role: `${json.main.humidity}`,
+											inline: true
+										},
+										{
+											emote: 'Wind Speed',
+											role: `${ms_to_ks(json.wind.speed)}kmh / ${ms_to_mlh(json.wind.speed)}mlh`,
+											inline: true
+										},
+										{
+											emote: 'Cloudiness',
+											role: `${json.clouds.all}%`,
+											inline: true
+										},
+										{
+											emote: 'Condition',
+											// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+											role: `${json.weather.map((w: any) => {
+												return `${w.main} (${w.description})`;
+											}).join(', ')}`,
+											inline: false
+										}
+									],
+									`http://openweathermap.org/img/wn/${json.weather[0].icon}@2x.png`,
+									null,
+									true,
+									null,
+									null
+								)]
+						}
 						)
 						.catch(e => {
 							return resolve({

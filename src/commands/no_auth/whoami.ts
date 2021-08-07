@@ -16,43 +16,45 @@ module.exports = async (
         }
 
         message.channel
-            .send(
-                create_rich_embed(
-                    message.member
-                        ? message.member?.displayName
-                        : 'could not fetch name',
-                    null,
-                    '#ddff00',
-                    [
-                        {
-                            emote: 'Level',
-                            role: member_object.level,
-                            inline: true
-                        },
-                        {
-                            emote: 'Regex',
-                            role: (!member_object.regex || member_object.regex === 'null')
-                                ? 'not set'
-                                : member_object.regex,
-                            inline: true
-                        },
-                        {
-                            emote: 'Penalties',
-                            role: `${member_object.penalties ? member_object.penalties : 0}`,
-                            inline: true
-                        },
-                        {
-                            emote: 'Id',
-                            role: member_object.id,
-                            inline: false
-                        }
-                    ],
-                    message.member?.user.avatarURL(),
-                    null,
-                    true,
-                    null,
-                    null
-                )
+            .send({
+                embeds: [
+                    create_rich_embed(
+                        message.member
+                            ? message.member?.displayName
+                            : 'could not fetch name',
+                        null,
+                        '#ddff00',
+                        [
+                            {
+                                emote: 'Level',
+                                role: member_object.level,
+                                inline: true
+                            },
+                            {
+                                emote: 'Regex',
+                                role: (!member_object.regex || member_object.regex === 'null')
+                                    ? 'not set'
+                                    : member_object.regex,
+                                inline: true
+                            },
+                            {
+                                emote: 'Penalties',
+                                role: `${member_object.penalties ? member_object.penalties : 0}`,
+                                inline: true
+                            },
+                            {
+                                emote: 'Id',
+                                role: member_object.id,
+                                inline: false
+                            }
+                        ],
+                        message.member?.user.avatarURL(),
+                        null,
+                        true,
+                        null,
+                        null
+                    )]
+            }
             )
             .catch(e => {
                 return resolve({

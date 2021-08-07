@@ -90,16 +90,20 @@ module.exports = async (
 				});
 
 			message.channel
-				.send(create_rich_embed(
-					'LEADERBOARD',
-					'[Ranking System](https://portal-bot.xyz/docs/ranking)',
-					'#00FFFF',
-					member_levels,
-					null,
-					null,
-					true,
-					null,
-					null)
+				.send({
+					embeds: [
+						create_rich_embed(
+							'LEADERBOARD',
+							'[Ranking System](https://portal-bot.xyz/docs/ranking)',
+							'#00FFFF',
+							member_levels,
+							null,
+							null,
+							true,
+							null,
+							null
+						)]
+				}
 				)
 				.catch(e => {
 					return resolve({

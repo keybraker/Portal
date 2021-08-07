@@ -1,4 +1,4 @@
-import { InviteOptions, Message, TextChannel } from "discord.js";
+import { CreateInviteOptions, Message, TextChannel } from "discord.js";
 import { get_json, is_mod, message_help } from "../../libraries/help.library";
 import { ReturnPormise } from "../../types/classes/TypesPrtl.interface";
 
@@ -44,7 +44,7 @@ module.exports = async (
 			});
 		}
 
-		const invite_options = <InviteOptions>invite_options_json;
+		const invite_options = <CreateInviteOptions>invite_options_json;
 		if (!(invite_options.temporary || invite_options.maxAge || invite_options.maxUses &&
 			invite_options.unique || invite_options.reason)) {
 			return resolve({

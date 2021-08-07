@@ -1,4 +1,4 @@
-import { Message } from "discord.js";
+import { Message, VoiceChannel } from "discord.js";
 import { PortalChannelTypes } from "../../data/enums/PortalChannel.enum";
 import { delete_channel, included_in_voice_list, regex_interpreter } from "../../libraries/guild.library";
 import { message_help } from "../../libraries/help.library";
@@ -40,7 +40,7 @@ module.exports = async (
 		}
 
 		const current_member = message.member;
-		const current_voice = message.member.voice.channel;
+		const current_voice = <VoiceChannel>message.member.voice.channel;
 
 		guild_object.portal_list.some(p => {
 			return p.voice_list.some(v => {

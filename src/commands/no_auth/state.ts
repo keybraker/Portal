@@ -145,18 +145,20 @@ module.exports = async (
         }
 
         message.channel
-            .send(
-                create_rich_embed(
-                    'State of Portal',
-                    null,
-                    '#eba000',
-                    portal_state,
-                    null,
-                    null,
-                    true,
-                    null,
-                    null
-                )
+            .send({
+                embeds: [
+                    create_rich_embed(
+                        'State of Portal',
+                        null,
+                        '#eba000',
+                        portal_state,
+                        null,
+                        null,
+                        true,
+                        null,
+                        null
+                    )]
+            }
             )
             .catch(e => {
                 return resolve({

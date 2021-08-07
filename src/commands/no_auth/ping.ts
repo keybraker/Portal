@@ -8,42 +8,48 @@ module.exports = async (
 ): Promise<ReturnPormise> => {
 	return new Promise((resolve) => {
 		message.channel
-			.send(create_rich_embed(
-				null,
-				null,
-				'#0093ff',
-				null,
-				null,
-				null,
-				false,
-				null,
-				null,
-				undefined,
-				{
-					name: `Request sent`,
-					icon: 'https://raw.githubusercontent.com/keybraker/Portal/master/src/assets/img/ping.gif'
-				}
-			))
+			.send({
+				embeds: [
+					create_rich_embed(
+						null,
+						null,
+						'#0093ff',
+						null,
+						null,
+						null,
+						false,
+						null,
+						null,
+						undefined,
+						{
+							name: `Request sent`,
+							icon: 'https://raw.githubusercontent.com/keybraker/Portal/master/src/assets/img/ping.gif'
+						}
+					)]
+			}
+			)
 			.then((message_sent: Message) => {
 				message_sent
-					.edit(
-						create_rich_embed(
-							null,
-							null,
-							'#0093ff',
-							null,
-							null,
-							null,
-							false,
-							null,
-							null,
-							undefined,
-							{
-								name: `RTT latency\t${message_sent.createdTimestamp - message.createdTimestamp} ms\n` +
-									`Portal latency\t${client.ws.ping} ms`,
-								icon: 'https://raw.githubusercontent.com/keybraker/Portal/master/src/assets/img/ping.gif'
-							}
-						)
+					.edit({
+						embeds: [
+							create_rich_embed(
+								null,
+								null,
+								'#0093ff',
+								null,
+								null,
+								null,
+								false,
+								null,
+								null,
+								undefined,
+								{
+									name: `RTT latency\t${message_sent.createdTimestamp - message.createdTimestamp} ms\n` +
+										`Portal latency\t${client.ws.ping} ms`,
+									icon: 'https://raw.githubusercontent.com/keybraker/Portal/master/src/assets/img/ping.gif'
+								}
+							)]
+					}
 					)
 					.then(() => {
 						return resolve({

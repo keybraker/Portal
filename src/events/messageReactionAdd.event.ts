@@ -364,7 +364,7 @@ async function reaction_music_manager(
 							user.createDM()
 								.then(dm => {
 									dm
-										.send(r)
+										.send({ embeds: [r] })
 										.catch(e => {
 											return reject(`failed to send a message / ${e}`);
 										});
@@ -481,10 +481,11 @@ module.exports = async (
 										.send(`${args.user}, ${r}`)
 										.then(sent_message => {
 											sent_message
-												.delete({ timeout: 7500 })
+												.delete() // { timeout: 7500 }
 												.catch(e => {
 													return reject(`failed to delete message / ${e}`);
 												});
+
 											return resolve('');
 										})
 										.catch(e => {
@@ -500,7 +501,7 @@ module.exports = async (
 										.send(`${args.user}, ${e}`)
 										.then(sent_message => {
 											sent_message
-												.delete({ timeout: 7500 })
+												.delete() // { timeout: 7500 }
 												.catch(e => {
 													return reject(`failed to delete message / ${e}`);
 												});
@@ -594,23 +595,25 @@ module.exports = async (
 									: `Noboody voted`;
 
 								args.messageReaction.message.channel
-									.send(
-										create_rich_embed(
-											null,
-											null,
-											'#9900ff',
-											null,
-											null,
-											null,
-											false,
-											null,
-											null,
-											undefined,
-											{
-												name: message,
-												icon: 'https://raw.githubusercontent.com/keybraker/Portal/master/src/assets/img/firework.gif'
-											}
-										)
+									.send({
+										embeds: [
+											create_rich_embed(
+												null,
+												null,
+												'#9900ff',
+												null,
+												null,
+												null,
+												false,
+												null,
+												null,
+												undefined,
+												{
+													name: message,
+													icon: 'https://raw.githubusercontent.com/keybraker/Portal/master/src/assets/img/firework.gif'
+												}
+											)]
+									}
 									)
 									.catch(e => {
 										return reject(`failed to send message / ${e}`);

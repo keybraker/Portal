@@ -71,25 +71,26 @@ module.exports = async (
 			];
 
 			message
-				.reply(
-					create_rich_embed(
-						'Help Card',
-						'Detailed documentation at [portal-bot.xyz/docs](https://portal-bot.xyz/docs)\n\n' +
-						'> make a member an **admin**, give role `p.admin`\n' +
-						'> make a member an **moderator**, give role `p.mod`\n' +
-						'> make a member a **dj**, give role `p.dj`\n' +
-						'> to **whitelist** a member, give role `p.mod`\n' +
-						'> to **ignore** a member, give role `p.ignore`\n' +
-						'> for more click [here](https://portal-bot.xyz/help#q-how-can-i-give-members-authority)',
-						'#05d1ff',
-						help_array,
-						null,
-						null,
-						true,
-						null,
-						null
-					)
-				)
+				.reply({
+					embeds: [
+						create_rich_embed(
+							'Help Card',
+							'Detailed documentation at [portal-bot.xyz/docs](https://portal-bot.xyz/docs)\n\n' +
+							'> make a member an **admin**, give role `p.admin`\n' +
+							'> make a member an **moderator**, give role `p.mod`\n' +
+							'> make a member a **dj**, give role `p.dj`\n' +
+							'> to **whitelist** a member, give role `p.mod`\n' +
+							'> to **ignore** a member, give role `p.ignore`\n' +
+							'> for more click [here](https://portal-bot.xyz/help#q-how-can-i-give-members-authority)',
+							'#05d1ff',
+							help_array,
+							null,
+							null,
+							true,
+							null,
+							null
+						)]
+				})
 				.then(() => {
 					return resolve({
 						result: true,
@@ -126,7 +127,7 @@ module.exports = async (
 
 			if (guide) {
 				message.author
-					.send(guide)
+					.send({ embeds: [guide] })
 					.then(() => {
 						return resolve({
 							result: true,
@@ -171,7 +172,7 @@ module.exports = async (
 				embed_array
 					.forEach(embed => {
 						message.author
-							.send(embed)
+							.send({ embeds: [embed] })
 							.then(() => {
 								return resolve({
 									result: true,
@@ -189,6 +190,7 @@ module.exports = async (
 				let detailed: boolean | MessageEmbed = false;
 
 				detailed = get_command_help_super(args[0]);
+
 				if (!detailed) {
 					detailed = get_variable_help_super(args[0]);
 					if (!detailed) {
@@ -208,9 +210,9 @@ module.exports = async (
 					}
 				}
 
-				if (detailed) {
+				if (detailed && typeof detailed !== 'boolean') {
 					message.author
-						.send(detailed)
+						.send({ embeds: [detailed] })
 						.then(() => {
 							return resolve({
 								result: true,

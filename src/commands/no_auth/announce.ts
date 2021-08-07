@@ -60,7 +60,7 @@ module.exports = async (
         );
 
         announcement_channel
-            .send(rich_message)
+            .send({ embeds: [rich_message] })
             .then(() => {
                 client_talk(client, guild_object, 'announce');
 

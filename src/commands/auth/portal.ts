@@ -1,4 +1,4 @@
-import { GuildCreateChannelOptions, Message } from "discord.js";
+import { GuildChannelCreateOptions, Message } from "discord.js";
 import { create_channel } from "../../libraries/guild.library";
 import { message_help } from "../../libraries/help.library";
 import { insert_portal } from "../../libraries/mongo.library";
@@ -42,9 +42,9 @@ module.exports = async (
 			portal_category = null;
 		}
 
-		const portal_options: GuildCreateChannelOptions = {
+		const portal_options: GuildChannelCreateOptions = {
 			topic: `by Portal, channels on demand`,
-			type: 'voice',
+			type: 2,
 			bitrate: 32000,
 			userLimit: 1
 		};

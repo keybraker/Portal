@@ -52,7 +52,7 @@ module.exports = async (
 		if (message.mentions) {
 			if (message.mentions.members) {
 				if (message.guild) {
-					if (message.mentions.members.array().length === 0) {
+					if (message.mentions.members.size === 0) {
 						return resolve({
 							result: false,
 							value: message_help('commands', 'focus', `you must tag a member`)

@@ -1,4 +1,4 @@
-import { Guild, GuildMember, Message, MessageEmbed, OverwriteResolvable, VoiceChannel } from 'discord.js';
+import { Guild, GuildMember, Message, MessageEmbed, OverwriteResolvable, VoiceChannel, StageChannel } from 'discord.js';
 import { AuthEnum } from '../../data/enums/Admin.enum';
 import { LocaleEnum, LocaleList } from '../../data/enums/Locales.enum';
 import { ProfanityLevelEnum, ProfanityLevelList } from '../../data/enums/ProfanityLevel.enum';
@@ -323,13 +323,13 @@ const attributes: InterfaceBlueprint[] = [
 			);
 
 			if (portal_object) {
-				const portal_channel = voice_channel.guild.channels.cache
+				const portal_channel = <VoiceChannel>voice_channel.guild.channels.cache
 					.find(c => c.id === portal_object.id);
 
-				if (portal_channel && portal_channel.permissionOverwrites.size > 0) {
-					return `${portal_channel.permissionOverwrites
+				if (portal_channel && portal_channel.permissionOverwrites.cache.size > 0) {
+					return `${portal_channel.permissionOverwrites.cache
 						.filter(p => p.type === 'role')
-						.filter(p => p.allow.bitfield === 1048576)
+						.filter(p => p.allow.bitfield === BigInt(1048576))
 						.map(p => {
 							const role = voice_channel.guild.roles.cache
 								.find(r => r.id === p.id);
@@ -355,7 +355,7 @@ const attributes: InterfaceBlueprint[] = [
 
 			return new Promise((resolve) => {
 				if (message.mentions.everyone || (message.mentions && message.mentions.roles)) {
-					if (!message.mentions.everyone && message.mentions.roles.array().length === 0) {
+					if (!message.mentions.everyone && message.mentions.roles.size === 0) {
 						return resolve({
 							result: false,
 							value: `attribute ${ctgr.join('.') + '.' + attr} can only be one or more roles`
@@ -389,12 +389,12 @@ const attributes: InterfaceBlueprint[] = [
 						}
 					}
 
-					const portal_channel = voice_channel.guild.channels.cache
+					const portal_channel = <VoiceChannel>voice_channel.guild.channels.cache
 						.find(c => c.id === portal_object.id);
 
 					if (portal_channel) {
-						portal_channel
-							.overwritePermissions(permission_overwrites)
+						portal_channel.permissionOverwrites
+							.set(permission_overwrites)
 							.then(r => {
 								const roles = message.mentions.everyone
 									? '@everyone'
@@ -478,7 +478,7 @@ const attributes: InterfaceBlueprint[] = [
 
 			return new Promise((resolve) => {
 				if (message.mentions.everyone || (message.mentions && message.mentions.roles)) {
-					if (!message.mentions.everyone && message.mentions.roles.array().length === 0) {
+					if (!message.mentions.everyone && message.mentions.roles.size === 0) {
 						return resolve({
 							result: false,
 							value: `attribute ${ctgr.join('.') + '.' + attr} can only be one or more roles`
@@ -529,17 +529,14 @@ const attributes: InterfaceBlueprint[] = [
 			voice_channel: VoiceChannel | undefined | null, voice_object: VoiceChannelPrtl | undefined | null
 			// portal_object_list: PortalChannelPrtl[] | undefined | null, guild_object: GuildPrtl, guild: Guild
 		): string[] | string => {
-			if (!voice_object) {
-				return 'N/A';
-			}
-			if (!voice_channel) {
+			if (!voice_object || !voice_channel) {
 				return 'N/A';
 			}
 
-			if (voice_channel.permissionOverwrites.size > 0) {
-				return `${voice_channel.permissionOverwrites
+			if (voice_channel.permissionOverwrites.cache.size > 0) {
+				return `${voice_channel.permissionOverwrites.cache
 					.filter(p => p.type === 'role')
-					.filter(p => p.allow.bitfield === 1048576)
+					.filter(p => p.allow.bitfield === BigInt(1048576))
 					.map(p => {
 						const role = voice_channel.guild.roles.cache
 							.find(r => r.id === p.id);
@@ -564,7 +561,7 @@ const attributes: InterfaceBlueprint[] = [
 
 			return new Promise((resolve) => {
 				if (message.mentions.everyone || (message.mentions && message.mentions.roles)) {
-					if (!message.mentions.everyone && message.mentions.roles.array().length === 0) {
+					if (!message.mentions.everyone && message.mentions.roles.size === 0) {
 						return resolve({
 							result: false,
 							value: `attribute ${ctgr.join('.') + '.' + attr} can only be one or more roles`
@@ -599,8 +596,8 @@ const attributes: InterfaceBlueprint[] = [
 					}
 
 					if (voice_channel) {
-						voice_channel
-							.overwritePermissions(permission_overwrites)
+						voice_channel.permissionOverwrites
+							.set(permission_overwrites)
 							.then(r => {
 								const roles = message.mentions.everyone
 									? '@everyone'
@@ -1136,7 +1133,7 @@ const attributes: InterfaceBlueprint[] = [
 			const attr = 'mute_role';
 
 			return new Promise((resolve) => {
-				if (!message.mentions.everyone && message.mentions.roles.array().length === 0) {
+				if (!message.mentions.everyone && message.mentions.roles.size === 0) {
 					return resolve({
 						result: false,
 						value: `attribute ${ctgr.join('.') + '.' + attr} can only be a role`
@@ -1300,7 +1297,7 @@ const attributes: InterfaceBlueprint[] = [
 					});
 				}
 
-				if (!message.mentions || !message.mentions.roles || message.mentions.roles.array().length === 0) {
+				if (!message.mentions || !message.mentions.roles || message.mentions.roles.size === 0) {
 					if (value === 'null') {
 						update_guild(guild_object.id, attr, 'null')
 							.then(r => {
@@ -2122,7 +2119,7 @@ export function get_attribute(
 }
 
 export function set_attribute(
-	voice_channel: VoiceChannel | undefined | null, guild_object: GuildPrtl,
+	voice_channel: VoiceChannel | StageChannel | undefined | null, guild_object: GuildPrtl,
 	candidate: string, value: string, member: GuildMember, message: Message
 ): Promise<ReturnPormise> {
 	return new Promise((resolve) => {

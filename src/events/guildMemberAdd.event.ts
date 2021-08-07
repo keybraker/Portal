@@ -43,18 +43,20 @@ module.exports = async (
 
 								if (announcement_channel) {
 									announcement_channel
-										.send(
-											create_rich_embed(
-												'member joined',
-												join_message,
-												'#00C70D',
-												[],
-												args.member.user.avatarURL(),
-												null,
-												true,
-												null,
-												null
-											)
+										.send({
+											embeds: [
+												create_rich_embed(
+													'member joined',
+													join_message,
+													'#00C70D',
+													[],
+													args.member.user.avatarURL(),
+													null,
+													true,
+													null,
+													null
+												)]
+										}
 										)
 										.then(() => {
 											return resolve(`added member ${args.member.id} to ${args.member.guild.id}`);

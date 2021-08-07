@@ -284,7 +284,7 @@ const variables: InterfaceBlueprint[] = [
 			if (!voice_channel) return 'N/A'
 			let cnt = 0;
 			voice_channel.members.forEach((member) => {
-				if (member.presence.activities !== null && !member.user.bot) {
+				if (member.presence?.activities !== null && !member.user.bot) {
 					cnt++;
 				}
 			});
@@ -354,7 +354,7 @@ const variables: InterfaceBlueprint[] = [
 			if (!voice_channel) return 'N/A'
 			const mmbr_lst: string[] = [];
 			voice_channel.members.forEach(member => {
-				if (member.presence.activities !== null) {
+				if (member.presence?.activities !== null) {
 					mmbr_lst.push(member.displayName);
 				}
 			});

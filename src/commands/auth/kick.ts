@@ -40,7 +40,7 @@ module.exports = async (
 		}
 
 		if (message.mentions && message.mentions.members) {
-			if (message.mentions.members.array().length === 0) {
+			if (message.mentions.members.size === 0) {
 				return resolve({
 					result: false,
 					value: message_help('commands', 'kick', `you must tag a member`)

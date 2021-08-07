@@ -82,24 +82,26 @@ module.exports = async (
 					});
 				}
 				message.channel
-					.send(
-						create_rich_embed(
-							`STOCK ${meta.symbol} (${meta.regularMarketPrice}) - ${moment().format('DD/MM/YY')}`,
-							'powered by yahoo finance',
-							'#FF0000', [],
-							// [
-							// 	{
-							// 		emote: `${voca.titleCase(crypto_name)} to ${voca.titleCase(currnc_name)} price`,
-							// 		role: `${json[crypto_name][currnc_name]}`,
-							// 		inline: false
-							// 	}
-							// ],
-							null,
-							null,
-							true,
-							null,
-							null
-						)
+					.send({
+						embeds: [
+							create_rich_embed(
+								`STOCK ${meta.symbol} (${meta.regularMarketPrice}) - ${moment().format('DD/MM/YY')}`,
+								'powered by yahoo finance',
+								'#FF0000', [],
+								// [
+								// 	{
+								// 		emote: `${voca.titleCase(crypto_name)} to ${voca.titleCase(currnc_name)} price`,
+								// 		role: `${json[crypto_name][currnc_name]}`,
+								// 		inline: false
+								// 	}
+								// ],
+								null,
+								null,
+								true,
+								null,
+								null
+							)]
+					}
 					)
 					.catch(e => {
 						return resolve({

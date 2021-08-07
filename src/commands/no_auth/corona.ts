@@ -85,66 +85,68 @@ module.exports = async (
 					}
 
 					message.channel
-						.send(
-							create_rich_embed(
-								`${country_data.country} | ${moment(country_data.time).format('DD/MM/YY')}`,
-								'Covid19 stats by covid-193',
-								'#FF0000',
-								[
-									{
-										emote: 'NEW cases',
-										role: `${country_data.cases.new ? country_data.cases.new : 'N/A'}`,
-										inline: true
-									},
-									{
-										emote: 'NEW deaths',
-										role: `${country_data.deaths.new ? country_data.deaths.new : 'N/A'}`,
-										inline: true
-									},
-									{
-										emote: 'Tests P1M',
-										role: `${country_data.tests['1M_pop']}`,
-										inline: true
-									},
-									{
-										emote: 'Cases',
-										role: `${country_data.cases.total}`,
-										inline: true
-									},
-									{
-										emote: 'Deaths',
-										role: `${country_data.deaths.total}`,
-										inline: true
-									},
-									{
-										emote: 'Recovered',
-										role: `${country_data.cases.recovered}`,
-										inline: true
-									},
-									{
-										emote: '%Recovered',
-										role: `${((country_data.cases.recovered / country_data.cases.total) * 100)
-											.toFixed(2)}%`,
-										inline: true
-									},
-									{
-										emote: '%Diseased',
-										role: `${((country_data.deaths.total / country_data.cases.total) * 100)
-											.toFixed(2)}%`,
-										inline: true
-									},
-									{
-										emote: 'Critical',
-										role: `${country_data.cases.critical}`,
-										inline: true
-									}
-								],
-								null,
-								null,
-								true,
-								null,
-								null
-							)
+						.send({
+							embeds: [
+								create_rich_embed(
+									`${country_data.country} | ${moment(country_data.time).format('DD/MM/YY')}`,
+									'Covid19 stats by covid-193',
+									'#FF0000',
+									[
+										{
+											emote: 'NEW cases',
+											role: `${country_data.cases.new ? country_data.cases.new : 'N/A'}`,
+											inline: true
+										},
+										{
+											emote: 'NEW deaths',
+											role: `${country_data.deaths.new ? country_data.deaths.new : 'N/A'}`,
+											inline: true
+										},
+										{
+											emote: 'Tests P1M',
+											role: `${country_data.tests['1M_pop']}`,
+											inline: true
+										},
+										{
+											emote: 'Cases',
+											role: `${country_data.cases.total}`,
+											inline: true
+										},
+										{
+											emote: 'Deaths',
+											role: `${country_data.deaths.total}`,
+											inline: true
+										},
+										{
+											emote: 'Recovered',
+											role: `${country_data.cases.recovered}`,
+											inline: true
+										},
+										{
+											emote: '%Recovered',
+											role: `${((country_data.cases.recovered / country_data.cases.total) * 100)
+												.toFixed(2)}%`,
+											inline: true
+										},
+										{
+											emote: '%Diseased',
+											role: `${((country_data.deaths.total / country_data.cases.total) * 100)
+												.toFixed(2)}%`,
+											inline: true
+										},
+										{
+											emote: 'Critical',
+											role: `${country_data.cases.critical}`,
+											inline: true
+										}
+									],
+									null,
+									null,
+									true,
+									null,
+									null
+								)]
+						}
 						)
 						.catch((e: any) => {
 							return resolve({

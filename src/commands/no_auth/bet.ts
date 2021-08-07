@@ -63,50 +63,52 @@ module.exports = async (
 				}
 
 				message.channel
-					.send(
-						create_rich_embed(
-							`${args[1]} from ${args[0]} | ${moment(json.last.drawTime).format('DD/MM/YY')}`,
-							`powered by ${args[0]}`,
-							'#0384fc',
-							[
-								{
-									emote: 'Winning Numbers',
-									// eslint-disable-next-line @typescript-eslint/no-unsafe-call
-									role: `${json.last.winningNumbers.list.map((n: number) => n).join(', ')}`,
-									inline: true
-								},
-								{
-									emote: 'Tzoker',
-									role: `${json.last.winningNumbers.bonus}`,
-									inline: true
-								},
-								{
-									emote: `${(json.last.prizeCategories[0].winners > 1) ? 'Winners' : 'Winner'}`,
-									role: `${json.last.prizeCategories[0].winners}`,
-									inline: true
-								},
-								{
-									emote: 'Draw Number',
-									role: `${json.last.drawId}`,
-									inline: true
-								},
-								{
-									emote: 'Columns Cast',
-									role: `${json.last.wagerStatistics.columns}`,
-									inline: true
-								},
-								{
-									emote: 'Wagers',
-									role: `${json.last.wagerStatistics.wagers}`,
-									inline: true
-								}
-							],
-							null,
-							null,
-							true,
-							null,
-							null
-						)
+					.send({
+						embeds: [
+							create_rich_embed(
+								`${args[1]} from ${args[0]} | ${moment(json.last.drawTime).format('DD/MM/YY')}`,
+								`powered by ${args[0]}`,
+								'#0384fc',
+								[
+									{
+										emote: 'Winning Numbers',
+										// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+										role: `${json.last.winningNumbers.list.map((n: number) => n).join(', ')}`,
+										inline: true
+									},
+									{
+										emote: 'Tzoker',
+										role: `${json.last.winningNumbers.bonus}`,
+										inline: true
+									},
+									{
+										emote: `${(json.last.prizeCategories[0].winners > 1) ? 'Winners' : 'Winner'}`,
+										role: `${json.last.prizeCategories[0].winners}`,
+										inline: true
+									},
+									{
+										emote: 'Draw Number',
+										role: `${json.last.drawId}`,
+										inline: true
+									},
+									{
+										emote: 'Columns Cast',
+										role: `${json.last.wagerStatistics.columns}`,
+										inline: true
+									},
+									{
+										emote: 'Wagers',
+										role: `${json.last.wagerStatistics.wagers}`,
+										inline: true
+									}
+								],
+								null,
+								null,
+								true,
+								null,
+								null
+							)]
+					}
 					)
 					.catch((e: any) => {
 						return resolve({
