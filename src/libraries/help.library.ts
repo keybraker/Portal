@@ -10,7 +10,7 @@ import { GuildPrtl, MusicData } from "../types/classes/GuildPrtl.class";
 import { Field, TimeElapsed } from "../types/classes/TypesPrtl.interface";
 import { client_talk } from "./localisation.library";
 import { fetch_guild, fetch_guild_list, set_music_data } from "./mongo.library";
-import { VoiceConnection, getVoiceConnection } from "@discordjs/voice";
+import { VoiceConnection, getVoiceConnection, joinVoiceChannel } from "@discordjs/voice";
 import { Channel } from "diagnostics_channel";
 
 const idle_thumbnail = 'https://raw.githubusercontent.com/keybraker/' +
@@ -381,52 +381,43 @@ export async function join_by_reaction(
 	client: Client, guild_object: GuildPrtl, user: User, announce_entrance: boolean
 ): Promise<VoiceConnection> {
 	return new Promise((resolve, reject) => {
-		if (!user.presence) {
-			return reject('no user presence');
-		}
+		const voice_connection_in_guild = getVoiceConnection(guild_object.id);
+		const guild = client.guilds.cache.find(g => g.id === guild_object.id);
 
-		if (!user.presence.member) {
-			return reject('no user presence member');
-		}
-
-		if (!user.presence.member.voice) {
-			return reject('you must be connected to a voice channel');
-		}
-
-		if (!user.presence.member.voice.channel) {
-			return reject('you must be connected to a voice channel');
-		}
-
-		const voice_connection_in_guild = getVoiceConnection(user.presence.member?.voice.channel?.guild.id);
-
-		if (voice_connection_in_guild &&
-			voice_connection_in_guild.channel.id === user.presence.member.voice.channel?.id
+		if (
+			voice_connection_in_guild && guild &&
+			guild.me?.voice.channel?.members.some(m => m.id === user.id)
 		) {
-			voice_connection_in_guild?.voice?.setSelfDeaf(true);
-
+			guild.me?.voice.setDeaf(true);
 			return resolve(voice_connection_in_guild);
-		} else if (!voice_connection_in_guild || (voice_connection_in_guild &&
-			!voice_connection_in_guild.channel.members.some(m => !m.user.bot))
+
+		} else if (
+			!voice_connection_in_guild || (voice_connection_in_guild &&
+				!guild?.me?.voice.channel?.members.some(m => !m.user.bot))
 		) {
-			const current_voice = user.presence.member?.voice.channel;
+			const current_voice = guild?.me?.voice.channel;
 
 			if (!current_voice) {
 				return reject(`could not find your voice channel`);
 			}
 
-			current_voice.join()
-				.then(response => {
-					if (announce_entrance) {
-						client_talk(client, guild_object, 'join');
-					}
+			const connection = joinVoiceChannel({
+				channelId: current_voice.id,
+				guildId: current_voice.guild.id,
+				adapterCreator: current_voice.guild.voiceAdapterCreator
+			})
 
-					response.voice?.setDeaf(true); // setSelfDeaf(true);
+			if (connection) {
+				if (announce_entrance) {
+					client_talk(client, guild_object, 'join');
+				}
 
-					return resolve(response);
-				})
-				.catch(e => {
-					return reject(`failed to join voice channel / ${e}`);
-				});
+				guild?.me?.voice.setDeaf(true);
+
+				return resolve(connection);
+			} else {
+				return reject(`failed to join voice channel`);
+			}
 		}
 	});
 }
@@ -451,17 +442,19 @@ export async function join_user_voice(
 			return reject('could not fetch portal\'s voice connections');
 		}
 
-		const voice_connection_in_guild = getVoiceConnection(message.guild?.id);
+		
+		const voice_connection_in_guild = getVoiceConnection(guild_object.id);
+		const guild = client.guilds.cache.find(g => g.id === guild_object.id);
 
 		if (
 			voice_connection_in_guild &&
-			voice_connection_in_guild.channel.id === message.member.voice.channel?.id
+			guild?.me?.voice.channel?.members.some(m => m.id === message.member?.voice.channel?.id)
 		) {
-			voice_connection_in_guild?.voice?.setSelfDeaf(true);
+			guild?.me?.voice?.setDeaf(true);
 			return resolve(voice_connection_in_guild);
 		} else if (
 			!voice_connection_in_guild || (voice_connection_in_guild &&
-				!voice_connection_in_guild.channel.members.some(m => !m.user.bot))
+				!guild?.me?.voice.channel?.members.some(m => !m.user.bot))
 		) {
 			const current_voice = message.member.voice.channel;
 
@@ -473,19 +466,23 @@ export async function join_user_voice(
 				return reject('your current channel is on another guild');
 			}
 
-			current_voice.join()
-				.then(response => {
-					if (join) {
-						client_talk(client, guild_object, 'join');
-					}
+			const connection = joinVoiceChannel({
+				channelId: current_voice.id,
+				guildId: current_voice.guild.id,
+				adapterCreator: current_voice.guild.voiceAdapterCreator
+			})
 
-					response.voice?.setSelfDeaf(true);
+			if (connection) {
+				if (join) {
+					client_talk(client, guild_object, 'join');
+				}
 
-					return resolve(response);
-				})
-				.catch(e => {
-					return reject(`error while joining voice connection / ${e}`);
-				});
+				guild?.me?.voice.setDeaf(true);
+
+				return resolve(connection);
+			} else {
+				return reject(`failed to join voice channel`);
+			}
 		}
 	});
 }
@@ -562,7 +559,7 @@ export function is_authorised(
 	const administrator: PermissionString = 'ADMINISTRATOR';
 	const options: { checkAdmin: boolean, checkOwner: boolean } = { checkAdmin: true, checkOwner: true }
 
-	if (member.hasPermission(administrator, options)) {
+	if (member.permissions.has([administrator], true)) {
 		return true;
 	}
 
@@ -809,15 +806,14 @@ export function remove_empty_voice_channels(
 						guild_list.some(g =>
 							g.portal_list.some(p =>
 								p.voice_list.some((v, index) => {
-									if (v.id === channel.id && channel.members.size === 0) {
+									if (v.id === channel.id && (<GuildChannel>channel).members.size === 0) {
 										if (!channel.isThread && (<GuildChannel>channel).deletable) {
 											(<GuildChannel>channel)
 												.delete()
 												.then((channel) => {
 													p.voice_list.splice(index, 1);
 													logger.log({
-														level: 'info', type: 'none', message: `deleted empty channel: ${channel.name} ` +
-															`(${channel.id}) from ${channel.guild.name}`
+														level: 'info', type: 'none', message: `deleted empty channel`
 													});
 												})
 												.catch(e => {
