@@ -6,7 +6,7 @@ module.exports = async (
 	args: { channel: Channel | PartialDMChannel }
 ): Promise<string> => {
 	return new Promise((resolve, reject) => {
-		if (args.channel.type !== 'text' && args.channel.type !== 'voice') {
+		if (args.channel.type !== 'GUILD_TEXT' && args.channel.type !== 'GUILD_VOICE') {
 			return reject(`only voice and text channels are handled`);
 		}
 

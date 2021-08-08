@@ -67,7 +67,7 @@ export function get_status_list(
 
 	voice_channel.members.forEach((member: GuildMember) => {
 		if (!member.user.bot) {
-			if (member.presence.activities !== undefined) {
+			if (member.presence?.activities !== undefined) {
 				if (member.presence.activities.length > 0) {
 					status_aliases(member.presence.activities, voice_object.locale)
 						.forEach(stat => {

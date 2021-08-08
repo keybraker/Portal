@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 // const ytdl = require('ytdl-core');
 import ytdl from 'discord-ytdl-core';
-import { Client, Guild, Message, MessageAttachment, StreamDispatcher, StreamOptions, User, VoiceConnection } from "discord.js";
+import { Client, Guild, Message, MessageAttachment, User } from "discord.js";
 import { RequestOptions } from 'https';
 import yts, { Duration, PlaylistMetadataResult, SearchResult, VideoMetadataResult, VideoSearchResult } from 'yt-search';
 import config from '../config.json';
@@ -9,6 +9,7 @@ import { GuildPrtl } from "../types/classes/GuildPrtl.class";
 import { get_json, is_url, join_by_reaction, join_user_voice, update_music_lyrics_message, update_music_message } from './help.library';
 import { https_fetch, scrape_lyrics } from './http.library';
 import { clear_music_vote, fetch_guild_music_queue, insert_music_video, update_guild } from './mongo.library';
+import { getVoiceConnection, VoiceConnection, VoiceConnectionStatus, createAudioPlayer, createAudioResource, PlayerSubscription, StreamType, AudioPlayer, AudioPlayerStatus } from '@discordjs/voice';
 
 async function pop_music_queue(
 	guild_object: GuildPrtl
@@ -43,19 +44,19 @@ async function pop_music_queue(
 	})
 }
 
-function delete_dispatcher(
-	dispatcher: StreamDispatcher
-): boolean {
-	if (!dispatcher.destroyed) {
-		dispatcher.destroy();
-	}
+// function delete_player(
+// 	dispatcher: StreamDispatcher
+// ): boolean {
+// 	if (!dispatcher.destroyed) {
+// 		dispatcher.destroy();
+// 	}
 
-	return !dispatcher.destroyed;
-}
+// 	return !dispatcher.destroyed;
+// }
 
-function spawn_dispatcher(
+function spawn_player(
 	video_options: yts.VideoSearchResult, voice_connection: VoiceConnection
-): StreamDispatcher {
+): AudioPlayer {
 	const stream = ytdl(video_options.url, {
 		filter: 'audioonly',
 		opusEncoded: true,
@@ -65,11 +66,16 @@ function spawn_dispatcher(
 		// dlChunkSize: 10240 // default: 10240
 	});
 
-	const stream_options = <StreamOptions>{
-		type: 'opus'
-	};
+	const player = createAudioPlayer();
+	const resource = createAudioResource(stream, {
+		inputType: StreamType.Opus,
+	});
 
-	return voice_connection.play(stream, stream_options);
+	player.play(resource);
+
+	const subscription = voice_connection.subscribe(player);
+
+	return player;
 }
 
 async function push_video_to_queue(
@@ -92,23 +98,28 @@ async function push_video_to_queue(
 }
 
 async function start_playback(
-	voice_connection: VoiceConnection | undefined, client: Client, user: User, message: Message,
-	guild: Guild, guild_object: GuildPrtl, video: VideoSearchResult
+	voice_connection: VoiceConnection | undefined,
+	client: Client,
+	user: User,
+	message: Message,
+	guild: Guild,
+	guild_object: GuildPrtl,
+	video: VideoSearchResult
 ): Promise<string> {
 	return new Promise((resolve, reject) => {
 		push_video_to_queue(guild_object, video)
 			.then(() => {
 				if (voice_connection) {
-					if (!voice_connection.dispatcher) {
-						const dispatcher = spawn_dispatcher(
+					if (voice_connection.state.status === VoiceConnectionStatus.Ready) {
+						const audio_player = spawn_player(
 							guild_object.music_queue
 								? guild_object.music_queue[0]
 								: video,
 							voice_connection
 						);
 
-						dispatcher.once('finish', () => {
-							delete_dispatcher(dispatcher);
+						audio_player.once(AudioPlayerStatus.Idle, () => {
+							// delete_player(dispatcher);
 
 							skip(voice_connection, user, client, guild, guild_object)
 								.then(r => {
@@ -117,9 +128,7 @@ async function start_playback(
 											return reject(`failed to clear queue / ${e}`);
 										});
 
-									const animate = voice_connection?.dispatcher
-										? !voice_connection?.dispatcher.paused
-										: false;
+									const animate = voice_connection?.state.status === VoiceConnectionStatus.Signalling;
 
 									update_music_message(
 										guild,
@@ -150,15 +159,15 @@ async function start_playback(
 								return reject(`could not join your voice channel`);
 							}
 
-							const dispatcher = spawn_dispatcher(
+							const audio_player = spawn_player(
 								guild_object.music_queue
 									? guild_object.music_queue[0]
 									: video,
 								r
 							);
 
-							dispatcher.once('finish', () => {
-								delete_dispatcher(dispatcher);
+							audio_player.once(AudioPlayerStatus.Idle, () => {
+								// delete_player(dispatcher);
 
 								skip(r, user, client, guild, guild_object)
 									.then(r => {
@@ -167,12 +176,9 @@ async function start_playback(
 												return reject(`failed to clear queue / ${e}`);
 											});
 
-										const voice_connection = client.voice?.connections.find(c =>
-											c.voice?.guild.id === guild_object.id);
+										const voice_connection = getVoiceConnection(guild_object.id);
 
-										const animate = voice_connection?.dispatcher
-											? !voice_connection?.dispatcher.paused
-											: false;
+										const animate = voice_connection?.state.status === VoiceConnectionStatus.Signalling;
 
 										update_music_message(
 											guild,
@@ -434,13 +440,13 @@ export async function play(
 							return resolve('queue is empty');
 						}
 
-						const dispatcher = spawn_dispatcher(
+						const audio_player = spawn_player(
 							next_video,
 							voice_connection
 						);
 
-						dispatcher.once('finish', () => {
-							delete_dispatcher(dispatcher);
+						audio_player.once(AudioPlayerStatus.Idle, () => {
+							// delete_player(dispatcher);
 
 							skip(voice_connection, user, client, guild, guild_object)
 								.then(r => {
@@ -449,9 +455,7 @@ export async function play(
 											return reject(`failed to clear music votes / ${e}`);
 										});
 
-									const animate = voice_connection?.dispatcher
-										? !voice_connection?.dispatcher.paused
-										: false;
+									const animate = voice_connection?.state.status === VoiceConnectionStatus.Signalling;
 
 									update_music_message(
 										guild,
@@ -488,13 +492,13 @@ export async function play(
 						return resolve('could not join voice channel');
 					}
 
-					const dispatcher = spawn_dispatcher(
+					const audio_player = spawn_player(
 						guild_object.music_queue[0],
 						r
 					);
 
-					dispatcher.once('finish', () => {
-						delete_dispatcher(dispatcher);
+					audio_player.once(AudioPlayerStatus.Idle, () => {
+						// delete_player(dispatcher);
 
 						skip(voice_connection, user, client, guild, guild_object)
 							.then(r => {
@@ -503,8 +507,7 @@ export async function play(
 										return reject(`failed to clear music vote / ${e}`);
 									});
 
-								const voice_connection = client.voice?.connections.find(c =>
-									c.voice?.guild.id === guild_object.id);
+								const voice_connection = getVoiceConnection(guild_object.id);
 
 								const animate = voice_connection?.dispatcher
 									? !voice_connection?.dispatcher.paused
@@ -593,13 +596,13 @@ export async function skip(
 							return resolve('queue is empty');
 						}
 
-						const dispatcher = spawn_dispatcher(
+						const audio_player = spawn_player(
 							next_video,
 							voice_connection
 						);
 
-						dispatcher.once('finish', () => {
-							delete_dispatcher(dispatcher);
+						audio_player.once(AudioPlayerStatus.Idle, () => {
+							// delete_player(dispatcher);
 
 							skip(voice_connection, user, client, guild, guild_object)
 								.then(r => {
@@ -608,9 +611,7 @@ export async function skip(
 											return reject(`failed to clear music video / ${e}`);
 										});
 
-									const animate = voice_connection?.dispatcher
-										? !voice_connection?.dispatcher.paused
-										: false;
+									const animate = voice_connection?.state.status === VoiceConnectionStatus.Signalling;
 
 									update_music_message(
 										guild,
@@ -649,13 +650,13 @@ export async function skip(
 								return resolve('could not join voice channel');
 							}
 
-							const dispatcher = spawn_dispatcher(
+							const audio_player = spawn_player(
 								next_video,
 								r
 							);
 
-							dispatcher.once('finish', () => {
-								delete_dispatcher(dispatcher);
+							audio_player.once(AudioPlayerStatus.Idle, () => {
+								// delete_player(dispatcher);
 
 								skip(voice_connection, user, client, guild, guild_object)
 									.then(r => {
@@ -664,8 +665,7 @@ export async function skip(
 												return reject(`failed to clear music queue / ${e}`);
 											});
 
-										const voice_connection = client.voice?.connections.find(c =>
-											c.voice?.guild.id === guild_object.id);
+										const voice_connection = getVoiceConnection(guild_object.id);
 
 										const animate = voice_connection?.dispatcher
 											? !voice_connection?.dispatcher.paused

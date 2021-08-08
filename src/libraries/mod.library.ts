@@ -253,12 +253,13 @@ function mute_user(
    */
 function delete_message(message: Message): void {
 	if (message.deletable) {
-		message
-			.delete({
-				timeout: config.delete_delay * 1000
-			})
-			.catch(e => {
-				logger.error(new Error(`failed to delete message / ${e}`));
-			});
+		setTimeout(() =>
+			message
+				.delete()
+				.catch(e => {
+					logger.error(new Error(`failed to delete message / ${e}`));
+				}),
+			config.delete_delay * 1000
+		);
 	}
 }

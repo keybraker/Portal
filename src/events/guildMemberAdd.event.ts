@@ -34,7 +34,7 @@ module.exports = async (
 									}
 								}
 
-								const join_message = `member: ${args.member.presence.user}\n` +
+								const join_message = `member: ${args.member.presence?.user}\n` +
 									`id: ${args.member.guild.id}\n` +
 									`\thas joined ${args.member.guild}`;
 

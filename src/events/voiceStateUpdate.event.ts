@@ -1,4 +1,4 @@
-import { Client, Guild, TextChannel, VoiceChannel, VoiceConnection, VoiceState } from "discord.js";
+import { Client, Guild, TextChannel, VoiceChannel, VoiceState, StageChannel } from "discord.js";
 import { create_voice_channel, generate_channel_name, included_in_portal_list, included_in_voice_list } from "../libraries/guild.library";
 import { logger, update_music_lyrics_message, update_music_message } from "../libraries/help.library";
 import { client_talk } from "../libraries/localisation.library";
@@ -6,10 +6,11 @@ import { fetch_guild, remove_voice, set_music_data, update_guild } from "../libr
 import { update_timestamp } from "../libraries/user.library";
 import { GuildPrtl } from "../types/classes/GuildPrtl.class";
 import { PortalChannelPrtl } from "../types/classes/PortalChannelPrtl.class";
+import { getVoiceConnection } from "@discordjs/voice";
 
 // delete portal's voice channel
 async function delete_voice_channel(
-	channel: VoiceChannel | TextChannel, guild_object: GuildPrtl
+	channel: VoiceChannel | StageChannel  | TextChannel, guild_object: GuildPrtl
 ): Promise<string> {
 	return new Promise((resolve, reject) => {
 		if (!channel.deletable) {
@@ -48,7 +49,7 @@ async function delete_voice_channel(
 }
 
 function five_min_refresher(
-	voice_channel: VoiceChannel, portal_list: PortalChannelPrtl[],
+	voice_channel: VoiceChannel | StageChannel, portal_list: PortalChannelPrtl[],
 	guild: Guild, minutes: number
 ): void {
 	fetch_guild(guild.id)
@@ -77,7 +78,7 @@ function five_min_refresher(
 }
 
 async function channel_empty_check(
-	old_channel: VoiceChannel | TextChannel, guild_object: GuildPrtl, client: Client
+	old_channel: VoiceChannel | StageChannel | TextChannel, guild_object: GuildPrtl, client: Client
 ): Promise<string> {
 	return new Promise((resolve, reject) => {
 		if (old_channel.members.size === 0) {
@@ -95,9 +96,7 @@ async function channel_empty_check(
 		}
 		else if (old_channel.members.size === 1) {
 			if (client.voice) {
-				const voice_connection = client.voice.connections
-					.find((connection: VoiceConnection) =>
-						connection.channel.id === old_channel.id);
+				const voice_connection = getVoiceConnection(old_channel.guild.id);
 
 				if (voice_connection) {
 					guild_object.music_queue = [];
@@ -155,7 +154,7 @@ async function channel_empty_check(
 }
 
 async function from_null(
-	new_channel: VoiceChannel | null, guild_object: GuildPrtl, newState: VoiceState
+	new_channel: VoiceChannel | StageChannel | null, guild_object: GuildPrtl, newState: VoiceState
 ): Promise<string> {
 	return new Promise((resolve, reject) => {
 		if (new_channel) { // joined from null
@@ -228,7 +227,8 @@ async function from_null(
 }
 
 async function from_existing(
-	old_channel: VoiceChannel, new_channel: VoiceChannel | null, client: Client,
+	old_channel: VoiceChannel | StageChannel,
+	new_channel: VoiceChannel | StageChannel | null, client: Client,
 	guild_object: GuildPrtl, newState: VoiceState
 ): Promise<string> {
 	return new Promise((resolve, reject) => {
@@ -354,9 +354,9 @@ module.exports = async (
 								if (p.id === new_channel.id) {
 									if (p.no_bots && args.newState.member?.user.bot) {
 										args.newState
-											.kick('voice channel does not allow bots')
+											.disconnect('voice channel does not allow bots')
 											.catch(e => {
-												return reject(`failed to kick / ${e}`);
+												return reject(`failed to disconnect / ${e}`);
 											});
 
 										channel_empty_check(new_channel, guild_object, args.client)
@@ -374,9 +374,9 @@ module.exports = async (
 									if (v.id === new_channel.id) {
 										if (v.no_bots) {
 											args.newState
-												.kick('voice channel does not allow bots')
+												.disconnect('voice channel does not allow bots')
 												.catch(e => {
-													return reject(`failed to kick / ${e}`);
+													return reject(`failed to disconnect / ${e}`);
 												});
 
 											channel_empty_check(new_channel, guild_object, args.client)
@@ -392,17 +392,20 @@ module.exports = async (
 						}
 
 						if (args.client.voice && args.newState.member) {
-							const new_voice_connection = args.client.voice.connections
-								.find((connection: VoiceConnection) =>
-									!!new_channel && connection.channel.id === new_channel.id);
+							let new_voice_connection = null;
+							let old_voice_connection = null;
+
+							if (!!new_channel) {
+								new_voice_connection = getVoiceConnection(new_channel.id);
+							}
 
 							if (new_voice_connection && !args.newState.member.user.bot) {
 								client_talk(args.client, guild_object, 'user_connected');
 							}
 
-							const old_voice_connection = args.client.voice.connections
-								.find((connection: VoiceConnection) =>
-									!!old_channel && connection.channel.id === old_channel.id);
+							if (!!old_channel) {
+								old_voice_connection = getVoiceConnection(old_channel.id);
+							}
 
 							if (old_voice_connection && !args.newState.member.user.bot) {
 								client_talk(args.client, guild_object, 'user_disconnected');

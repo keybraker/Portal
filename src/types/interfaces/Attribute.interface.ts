@@ -2102,7 +2102,7 @@ export function get_attribute_help_super(
 }
 
 export function get_attribute(
-	voice_channel: VoiceChannel | undefined | null, voice_object: VoiceChannelPrtl | undefined | null,
+	voice_channel: VoiceChannel | StageChannel | undefined | null, voice_object: VoiceChannelPrtl | undefined | null,
 	portal_object_list: PortalChannelPrtl[] | undefined | null, guild_object: GuildPrtl,
 	guild: Guild, attr: string
 ): string | number | boolean {

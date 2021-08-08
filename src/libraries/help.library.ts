@@ -1,4 +1,7 @@
-import { Client, Guild, GuildChannel, GuildMember, Message, MessageEmbed, PermissionString, TextChannel, User, VoiceConnection } from "discord.js";
+import {
+	Client, Guild, GuildChannel, GuildMember, Message, MessageEmbed, PermissionString,
+	TextChannel, User, MessageCollector, MessageCollectorOptions, ThreadChannel
+} from "discord.js";
 import moment from "moment";
 import { createLogger, format } from "winston";
 import { VideoSearchResult } from "yt-search";
@@ -7,6 +10,8 @@ import { GuildPrtl, MusicData } from "../types/classes/GuildPrtl.class";
 import { Field, TimeElapsed } from "../types/classes/TypesPrtl.interface";
 import { client_talk } from "./localisation.library";
 import { fetch_guild, fetch_guild_list, set_music_data } from "./mongo.library";
+import { VoiceConnection, getVoiceConnection } from "@discordjs/voice";
+import { Channel } from "diagnostics_channel";
 
 const idle_thumbnail = 'https://raw.githubusercontent.com/keybraker/' +
 	'Portal/master/src/assets/img/empty_queue.png';
@@ -35,16 +40,23 @@ export async function ask_for_approval(
 			.send(question)
 			.then(question_msg => {
 				let accepted = false;
-				const filter = (m: Message) => m.author.id === requester.user.id;
-				const collector = message.channel
-					.createMessageCollector(filter, { time: 10000 });
+				const author = message.author;
+
+				// const filter: CollectorFilter = (m: Message) => (m.author.id === author.id);
+				const options: MessageCollectorOptions = {
+					max: 2,
+					maxProcessed: 2
+				}
+
+				const collector: MessageCollector = message.channel
+					.createMessageCollector(options);
 
 				collector.on('collect', (m: Message) => {
-					if (m.content === 'yes') {
+					if (m.author.id === author.id && m.content === 'yes') {
 						accepted = true;
 						collector.stop();
 					}
-					else if (m.content === 'no') {
+					else if (m.author.id === author.id && m.content === 'no') {
 						collector.stop();
 					}
 				});
@@ -139,7 +151,7 @@ export function create_music_message(
 		);
 
 		channel
-			.send(music_message_emb)
+			.send({ embeds: [music_message_emb] })
 			.then(sent_message => {
 				sent_message.react('▶️')
 					.catch((e: any) => {
@@ -213,7 +225,7 @@ export function create_lyrics_message(
 		);
 
 		channel
-			.send(music_lyrics_message_emb)
+			.send({ embeds: [music_lyrics_message_emb] })
 			.then(sent_message_lyrics => {
 				const music_data = new MusicData(
 					channel.id,
@@ -241,7 +253,7 @@ export function update_music_message(
 	status: string, animated = true
 ): Promise<boolean> {
 	return new Promise((resolve, reject) => {
-		const guild_channel: GuildChannel | undefined = guild.channels.cache
+		const guild_channel: GuildChannel | ThreadChannel | undefined = guild.channels.cache
 			.find(c => c.id === guild_object.music_data.channel_id);
 
 		if (!guild_channel) {
@@ -298,7 +310,7 @@ export function update_music_message(
 					.fetch(guild_object.music_data.message_id)
 					.then((message: Message) => {
 						message
-							.edit(music_message_emb)
+							.edit({ embeds: [music_message_emb] })
 							.then(() => {
 								return resolve(true);
 							})
@@ -318,7 +330,7 @@ export function update_music_lyrics_message(
 	guild: Guild, guild_object: GuildPrtl, lyrics: string, url?: string
 ): Promise<boolean> {
 	return new Promise((resolve, reject) => {
-		const guild_channel: GuildChannel | undefined = guild.channels.cache
+		const guild_channel: GuildChannel | ThreadChannel | undefined = guild.channels.cache
 			.find(c => c.id === guild_object.music_data.channel_id);
 
 		if (!guild_channel) {
@@ -348,7 +360,8 @@ export function update_music_lyrics_message(
 				channel.messages
 					.fetch(guild_object.music_data.message_lyrics_id)
 					.then((message: Message) => {
-						message.edit(music_message_emb)
+						message
+							.edit({ embeds: [music_message_emb] })
 							.then(() => {
 								return resolve(true);
 							})
@@ -384,8 +397,7 @@ export async function join_by_reaction(
 			return reject('you must be connected to a voice channel');
 		}
 
-		const voice_connection_in_guild = client.voice?.connections
-			.find(connection => connection.channel.guild.id === user.presence.member?.voice.channel?.guild.id);
+		const voice_connection_in_guild = getVoiceConnection(user.presence.member?.voice.channel?.guild.id);
 
 		if (voice_connection_in_guild &&
 			voice_connection_in_guild.channel.id === user.presence.member.voice.channel?.id
@@ -439,8 +451,7 @@ export async function join_user_voice(
 			return reject('could not fetch portal\'s voice connections');
 		}
 
-		const voice_connection_in_guild = client.voice.connections
-			.find(connection => connection.channel.guild.id === message.guild?.id);
+		const voice_connection_in_guild = getVoiceConnection(message.guild?.id);
 
 		if (
 			voice_connection_in_guild &&
@@ -470,7 +481,7 @@ export async function join_user_voice(
 
 					response.voice?.setSelfDeaf(true);
 
-					return resolve(response,);
+					return resolve(response);
 				})
 				.catch(e => {
 					return reject(`error while joining voice connection / ${e}`);
@@ -630,13 +641,14 @@ export function message_reply(
 				.reply(reply_string)
 				.then(sent_message => {
 					if (delete_reply && sent_message.deletable) {
-						sent_message
-							.delete({
-								timeout: config.delete_delay * 1000
-							})
-							.catch(e => {
-								return reject(`failed to delete message / ${e}`);
-							});
+						setTimeout(() =>
+							sent_message
+								.delete()
+								.catch(e => {
+									return reject(`failed to delete message / ${e}`);
+								}),
+							config.delete_delay * 1000
+						);
 					}
 				})
 				.catch(e => {
@@ -648,13 +660,13 @@ export function message_reply(
 			message
 				.react(status ? emote_pass : emote_fail)
 				.then(() => {
-					message
-						.delete({
-							timeout: config.delete_delay * 1000
-						})
+					setTimeout(() => message
+						.delete()
 						.catch(e => {
 							return reject(`failed to delete message / ${e}`);
-						});
+						}),
+						config.delete_delay * 1000
+					);
 
 					return resolve(true);
 				})
@@ -798,10 +810,10 @@ export function remove_empty_voice_channels(
 							g.portal_list.some(p =>
 								p.voice_list.some((v, index) => {
 									if (v.id === channel.id && channel.members.size === 0) {
-										if (channel.deletable) {
-											channel
+										if (!channel.isThread && (<GuildChannel>channel).deletable) {
+											(<GuildChannel>channel)
 												.delete()
-												.then(() => {
+												.then((channel) => {
 													p.voice_list.splice(index, 1);
 													logger.log({
 														level: 'info', type: 'none', message: `deleted empty channel: ${channel.name} ` +

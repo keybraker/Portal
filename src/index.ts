@@ -3,7 +3,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { Channel, Client, Guild, GuildMember, Intents, Message, MessageReaction, PartialDMChannel, PartialGuildMember, PartialMessage, PartialUser, User, VoiceState } from "discord.js";
+import {
+	Channel, Client, Guild, GuildMember, Intents, Message, MessageReaction,
+	PartialDMChannel, PartialGuildMember, PartialMessage, VoiceState, User, PartialUser
+} from "discord.js";
 import mongoose from 'mongoose';
 import { transports } from "winston";
 import command_config_json from './config.command.json';
@@ -18,6 +21,7 @@ import { start } from './libraries/music.library';
 import { add_points_message } from './libraries/user.library';
 import { GuildPrtl, MusicData } from './types/classes/GuildPrtl.class';
 import { ActiveCooldowns, CommandOptions, ReturnPormise, SpamCache } from "./types/classes/TypesPrtl.interface";
+import { getVoiceConnection } from "@discordjs/voice";
 
 if (config.debug) {
 	logger.add(new transports.Console());
@@ -58,19 +62,18 @@ const client = new Client(
 			'MESSAGE',
 			'REACTION'
 		],
-		ws: {
-			intents: // Intents.ALL
-				[
-					Intents.FLAGS.GUILDS,
-					Intents.FLAGS.GUILD_MEMBERS,
-					Intents.FLAGS.GUILD_VOICE_STATES,
-					Intents.FLAGS.GUILD_PRESENCES,
-					Intents.FLAGS.GUILD_MESSAGES,
-					Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
-					Intents.FLAGS.DIRECT_MESSAGES,
-					Intents.FLAGS.DIRECT_MESSAGE_REACTIONS
-				]
-		}
+
+		intents: // Intents.ALL
+			[
+				Intents.FLAGS.GUILDS,
+				Intents.FLAGS.GUILD_MEMBERS,
+				Intents.FLAGS.GUILD_VOICE_STATES,
+				Intents.FLAGS.GUILD_PRESENCES,
+				Intents.FLAGS.GUILD_MESSAGES,
+				Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+				Intents.FLAGS.DIRECT_MESSAGES,
+				Intents.FLAGS.DIRECT_MESSAGE_REACTIONS
+			]
 	}
 );
 
@@ -97,7 +100,7 @@ client.on('guildDelete', (guild: Guild) =>
 );
 
 // This event triggers when a new member joins a guild.
-client.on('guildMemberAdd', (member: GuildMember) => {
+client.on('guildMemberAdd', (member: GuildMember | PartialGuildMember) => {
 	event_loader('guildMemberAdd', {
 		'member': member
 	})
@@ -119,7 +122,7 @@ client.on('messageDelete', (message: Message | PartialMessage) =>
 );
 
 // This event triggers when a member reacts to a message
-client.on('messageReactionAdd', (messageReaction: MessageReaction, user: User | PartialUser) =>
+client.on('messageReactionAdd', (messageReaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) =>
 	event_loader('messageReactionAdd', {
 		'client': client,
 		'messageReaction': messageReaction,
@@ -152,9 +155,9 @@ client.on('voiceStateUpdate', (oldState: VoiceState, newState: VoiceState) => {
 });
 
 // runs on every single message received, from any channel or DM
-client.on('message', async (message: Message) => {
+client.on('messageCreate', async (message: Message) => {
 	if (!message || !message.member || !message.guild) return;
-	if (message.channel.type === 'dm' || message.author.bot) return;
+	if (message.channel.type === 'DM' || message.author.bot) return;
 
 	fetch_guild_predata(message.guild.id, message.author.id)
 		.then(guild_object => {
@@ -569,11 +572,6 @@ function handle_music_channels(
 					logger.error(new Error(`failed to remove music channel / ${e}`));
 				});
 		} else {
-			const voice_connection = client.voice
-				? client.voice.connections.find(c =>
-					c.channel.guild.id === message.guild?.id)
-				: undefined;
-
 			if (!message.guild || !message.member) {
 				if (message.deletable) {
 					message
@@ -586,18 +584,17 @@ function handle_music_channels(
 				return false;
 			}
 
-			const portal_voice_connection = client.voice?.connections
-				.find(c => c.channel.guild.id === message.guild?.id);
+			const portal_voice_connection = getVoiceConnection(message.guild.id);
 
 			if (portal_voice_connection) {
-				if (!portal_voice_connection.channel.members.has(message.member.id)) {
+				if (!message.guild.me?.voice.channel?.members.has(message.member.id)) {
 					if (message.guild) {
-						const portal_voice_connection = client.voice?.connections
-							.find(c => c.channel.guild.id === message.guild?.id);
+						const portal_voice_connection = getVoiceConnection(message.guild.id);
 
-						const animate = portal_voice_connection?.dispatcher
-							? !portal_voice_connection?.dispatcher.paused
-							: false;
+						const animate = true;
+						// portal_voice_connection?.dispatcher
+						// 	? !portal_voice_connection?.dispatcher.paused
+						// 	: false;
 
 						update_music_message(
 							message.guild,
@@ -625,17 +622,17 @@ function handle_music_channels(
 			}
 
 			start(
-				voice_connection, client, message.member.user, message,
+				portal_voice_connection, client, message.member.user, message,
 				message.guild, guild_object, message.content
 			)
 				.then(r => {
 					if (message.guild) {
-						const portal_voice_connection = client.voice?.connections
-							.find(c => c.channel.guild.id === message.guild?.id);
+						const portal_voice_connection = getVoiceConnection(message.guild.id);
 
-						const animate = portal_voice_connection?.dispatcher
-							? !portal_voice_connection?.dispatcher.paused
-							: false;
+						const animate = true;
+						// portal_voice_connection?.dispatcher
+						// 	? !portal_voice_connection?.dispatcher.paused
+						// 	: false;
 
 						update_music_message(
 							message.guild,

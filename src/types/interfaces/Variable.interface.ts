@@ -1,4 +1,4 @@
-import { Guild, MessageEmbed, VoiceChannel } from 'discord.js';
+import { Guild, MessageEmbed, VoiceChannel, StageChannel } from 'discord.js';
 import moment from 'moment';
 import { AuthEnum } from '../../data/enums/Admin.enum';
 import { create_rich_embed } from '../../libraries/help.library';
@@ -572,7 +572,7 @@ export function get_variable_help_super(candidate: string): MessageEmbed | boole
 }
 
 export function get_variable(
-	voice_channel: VoiceChannel | undefined | null, voice_object: VoiceChannelPrtl | undefined | null,
+	voice_channel: VoiceChannel | StageChannel | undefined | null, voice_object: VoiceChannelPrtl | undefined | null,
 	portal_object_list: PortalChannelPrtl[] | undefined | null, guild_object: GuildPrtl, guild: Guild, vrbl: string
 ): any {
 	for (let l = 0; l < variables.length; l++) {

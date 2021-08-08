@@ -4,6 +4,7 @@ import { create_rich_embed, is_authorised, is_dj, logger, update_music_lyrics_me
 import { clear_music_vote, fetch_guild_reaction_data, insert_music_vote, remove_poll, set_music_data, update_guild } from "../libraries/mongo.library";
 import { export_txt, get_lyrics, pause, play, skip } from "../libraries/music.library";
 import { GuildPrtl } from "../types/classes/GuildPrtl.class";
+import { getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 
 function clear_user_reactions(
 	messageReaction: MessageReaction, user: User
@@ -125,13 +126,11 @@ async function reaction_music_manager(
 			return resolve('message is not music player');
 		}
 
-		const portal_voice_connection = client.voice?.connections
-			.find(c => c.channel.guild.id === messageReaction.message?.guild?.id);
+		const portal_voice_connection = getVoiceConnection(messageReaction.message?.guild?.id);
+		const guild = client.guilds.cache.find(g => g.id === guild_object.id);
 
-		if (portal_voice_connection) {
-			if (!portal_voice_connection.channel.members.has(user.id)) {
-				return resolve('you must be in the same channel as Portal');
-			}
+		if (!guild?.me?.voice.channel?.members.has(user.id)) {
+			return resolve('you must be in the same channel as Portal');
 		}
 
 		switch (messageReaction.emoji.name) {
@@ -209,10 +208,10 @@ async function reaction_music_manager(
 						}
 
 						const votes = guild_object.music_data.votes.length;
-						const users = portal_voice_connection?.channel?.members
+						const users = guild?.me?.voice.channel?.members
 							.filter(member => !member.user.bot).size;
 
-						if (!(votes < users / 2)) {
+						if (users && !(votes < users / 2)) {
 							return resolve(`${votes}/${Math.round(users / 2)} votes required`);
 						} else {
 							reason = 'vote'
@@ -368,7 +367,7 @@ async function reaction_music_manager(
 										.catch(e => {
 											return reject(`failed to send a message / ${e}`);
 										});
-									return resolve(`sent '${user.presence.member?.displayName}' a list of the queue`);
+									return resolve(`sent '${user.username}' a list of the queue`);
 								})
 								.catch(e => {
 									return reject(`failed to create dm channel / ${e}`);
@@ -480,11 +479,14 @@ module.exports = async (
 									args.messageReaction.message.channel
 										.send(`${args.user}, ${r}`)
 										.then(sent_message => {
-											sent_message
-												.delete() // { timeout: 7500 }
-												.catch(e => {
-													return reject(`failed to delete message / ${e}`);
-												});
+											setTimeout(() =>
+												sent_message
+													.delete()
+													.catch(e => {
+														return reject(`failed to delete message / ${e}`);
+													}),
+												7500
+											);
 
 											return resolve('');
 										})
@@ -500,11 +502,15 @@ module.exports = async (
 									args.messageReaction.message.channel
 										.send(`${args.user}, ${e}`)
 										.then(sent_message => {
-											sent_message
-												.delete() // { timeout: 7500 }
-												.catch(e => {
-													return reject(`failed to delete message / ${e}`);
-												});
+											setTimeout(() =>
+												sent_message
+													.delete()
+													.catch(e => {
+														return reject(`failed to delete message / ${e}`);
+													}),
+												7500
+											);
+
 											return resolve('');
 										})
 										.catch(e => {
@@ -515,12 +521,11 @@ module.exports = async (
 							reaction_music_manager(args.client, guild_object, args.messageReaction, args.user)
 								.then(r => {
 									if (args.messageReaction.message.guild) {
-										const portal_voice_connection = args.client.voice?.connections
-											.find(c => c.channel.guild.id === args.messageReaction.message.guild?.id);
+										const portal_voice_connection = getVoiceConnection(args.messageReaction.message.guild?.id);
 
-										const animate = portal_voice_connection?.dispatcher
-											? !portal_voice_connection?.dispatcher.paused
-											: false;
+										const animate = true; // portal_voice_connection?.dispatcher
+											// ? !portal_voice_connection?.dispatcher.paused
+											// : false;
 
 										update_music_message(
 											args.messageReaction.message.guild,
