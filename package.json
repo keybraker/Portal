@@ -24,7 +24,7 @@
         "jsonfile": "^6.1.0",
         "lodash": "^4.17.21",
         "moment": "^2.29.1",
-        "mongoose": "^5.13.5",
+        "mongoose": "^6.0.2",
         "optionator": "^0.9.1",
         "opusscript": "0.0.8",
         "roll": "^1.3.1",
